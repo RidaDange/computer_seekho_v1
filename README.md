@@ -44,17 +44,18 @@ The project demonstrates a multi-backend architecture with both Java Spring Boot
 - Dockerized application setup
 
 ## 🏗️ Project Architecture
-The project consists of:
+
+```text
 ComputerSeekho.com
 │
 ├── Frontend
 │   └── React + Vite
 │
-├── Java
-│   └── Spring Boot Backend
+├── Backend - Java
+│   └── Spring Boot + REST APIs
 │
-├── DotNet
-│   └── ASP.NET Core Backend
+├── Backend - .NET
+│   └── ASP.NET Core + REST APIs
 │
-└── MySQL
-    └── Application Database
+└── Database
+    └── MySQL
