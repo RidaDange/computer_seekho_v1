@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ComputerSeekho — Service Flow Diagrams (Java Backend)</title>
+<style>
+  :root{
+    --ink:#12305c; --ink-soft:#3a5c8c; --paper:#fdfcf8; --line:#c9d6e6;
+    --read:#0f7b6c; --read-bg:#e8f5f2;
+    --write:#a8410c; --write-bg:#fdeee5;
+    --rule:#6d3bad; --rule-bg:#f2ecfc;
+    --calls:#0b5ea8; --calls-bg:#e7f0fb;
+    --muted:#5b6b80;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0 0 80px;
+    background:var(--paper);
+    color:#1c2430;
+    font:16px/1.55 "Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  header.top{
+    background:linear-gradient(135deg,#12305c,#1d4d8f);
+    color:#fff; padding:34px 28px 30px;
+  }
+  header.top h1{margin:0 0 6px; font-size:27px; letter-spacing:.2px}
+  header.top p{margin:0; opacity:.9; font-size:14.5px; max-width:820px}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px}
+
+  /* ---------- legend / key ---------- */
+  .key{
+    margin:26px auto 8px; padding:16px 18px;
+    border:1px solid var(--line); border-radius:10px; background:#fff;
+    display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center;
+  }
+  .key b{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted)}
+  .chip{
+    font-size:13px; padding:3px 10px; border-radius:20px; font-weight:600;
+  }
+  .chip.r{background:var(--read-bg); color:var(--read)}
+  .chip.w{background:var(--write-bg); color:var(--write)}
+  .chip.b{background:var(--rule-bg); color:var(--rule)}
+  .chip.c{background:var(--calls-bg); color:var(--calls)}
+
+  /* ---------- index ---------- */
+  .index{
+    margin:22px 0 10px; padding:18px 20px; background:#fff;
+    border:1px solid var(--line); border-radius:10px;
+  }
+  .index h2{margin:0 0 12px; font-size:16px; color:var(--ink)}
+  .index-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 14px}
+  .index-grid a{
+    text-decoration:none; color:var(--ink-soft); font-size:14px; padding:2px 0;
+    border-bottom:1px dotted transparent;
+  }
+  .index-grid a:hover{border-bottom-color:var(--ink-soft); color:var(--ink)}
+  .index-grid a .n{color:#9aa8ba; font-size:12px; margin-right:6px}
+
+  /* ---------- group heading ---------- */
+  h2.group{
+    margin:46px 0 4px; font-size:19px; color:var(--ink);
+    border-bottom:2px solid var(--ink); padding-bottom:7px;
+  }
+  p.group-note{margin:8px 0 22px; color:var(--muted); font-size:14.5px; max-width:900px}
+
+  /* ---------- service card ---------- */
+  .svc{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    margin:0 0 26px; overflow:hidden; box-shadow:0 1px 3px rgba(18,48,92,.06);
+    break-inside:avoid; page-break-inside:avoid;
+  }
+  .svc > h3{
+    margin:0; padding:14px 20px; font-size:18px; color:#fff;
+    background:var(--ink); display:flex; align-items:baseline; gap:12px;
+  }
+  .svc > h3 .num{
+    font-size:12px; background:rgba(255,255,255,.2); border-radius:5px;
+    padding:2px 8px; font-weight:600;
+  }
+  .svc > h3 .file{
+    margin-left:auto; font-size:12px; font-weight:400; opacity:.75;
+    font-family:ui-monospace,Consolas,monospace;
+  }
+
+  /* the three-branch tree: Purpose | Who calls | Calls */
+  .tree{
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    border-bottom:1px solid var(--line); background:#fafcff;
+  }
+  .branch{padding:16px 18px; border-right:1px solid var(--line); position:relative}
+  .branch:last-child{border-right:none}
+  .branch h4{
+    margin:0 0 10px; font-size:12px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); font-weight:700;
+  }
+  .branch h4::after{content:" ↓"; opacity:.5}
+  .branch ul{margin:0; padding-left:0; list-style:none}
+  .branch li{
+    font-size:14px; padding:2px 0; color:#243244;
+  }
+  .branch li code{
+    font-family:ui-monospace,Consolas,monospace; font-size:13px;
+    background:var(--calls-bg); color:var(--calls);
+    padding:1px 6px; border-radius:4px;
+  }
+  .branch li code.svc-dep{background:#fff3d9; color:#8a5a00}
+  .purpose{font-size:14.5px; color:#243244}
+
+  /* the R/W/Rules row */
+  .panels{display:grid; grid-template-columns:1fr 1fr 1.25fr}
+  .panel{padding:16px 18px; border-right:1px solid var(--line)}
+  .panel:last-child{border-right:none}
+  .panel h4{
+    margin:0 0 10px; font-size:12px; letter-spacing:.09em; text-transform:uppercase;
+    font-weight:700; display:inline-block; padding:3px 10px; border-radius:20px;
+  }
+  .panel.read h4{background:var(--read-bg); color:var(--read)}
+  .panel.write h4{background:var(--write-bg); color:var(--write)}
+  .panel.rules h4{background:var(--rule-bg); color:var(--rule)}
+  .panel ul{margin:0; padding-left:18px}
+  .panel li{font-size:14px; padding:2.5px 0; color:#243244}
+  .panel.read li::marker{color:var(--read)}
+  .panel.write li::marker{color:var(--write)}
+  .panel.rules li::marker{color:var(--rule)}
+  .panel .none{
+    font-size:14px; color:var(--muted); font-style:italic; padding-left:0;
+  }
+  .panel li b{color:var(--ink)}
+
+  .note{
+    margin:0; padding:12px 20px; background:#fffbe9;
+    border-top:1px solid #f0e3b8; font-size:13.5px; color:#6b5510;
+  }
+  .note b{color:#5a4308}
+
+  footer{
+    margin-top:50px; padding:22px 20px; border-top:1px solid var(--line);
+    color:var(--muted); font-size:13.5px; text-align:center;
+  }
+
+  @media (max-width:900px){
+    .tree,.panels{grid-template-columns:1fr}
+    .branch,.panel{border-right:none; border-bottom:1px solid var(--line)}
+    .branch:last-child,.panel:last-child{border-bottom:none}
+  }
+  @media print{
+    body{background:#fff}
+    header.top{background:#12305c !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .svc > h3{background:#12305c !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+    *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .index{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>ComputerSeekho — Service Layer Flow Diagrams</h1>
+    <p>Java Spring Boot backend. All 27 services, each shown as
+       <b>Purpose → Who calls → Calls</b>, then what it <b>Reads</b>, what it
+       <b>Writes</b>, and the <b>Business Logic</b> it enforces.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="key">
+    <b>Key</b>
+    <span class="chip r">Read — queries, returns data, changes nothing</span>
+    <span class="chip w">Write — inserts, updates, deletes</span>
+    <span class="chip b">Business Logic — the rules the service refuses to break</span>
+    <span class="chip c">Repository</span>
+    <span class="chip" style="background:#fff3d9;color:#8a5a00">Another service</span>
+  </div>
+
+  <div class="index">
+    <h2>All 27 services</h2>
+    <div class="index-grid" id="index"></div>
+  </div>
+
+  <div id="content"></div>
+
+</div>
+
+<footer>
+  ComputerSeekho — SMVITA. Generated from the Java source in
+  <code>backend/src/main/java/com/smvita/computerseekho/service/</code>.
+</footer>
+
+<script>
+// ---------------------------------------------------------------------------
+// Every entry below was read out of the actual Java source: the "calls" list
+// is the class's constructor-injected fields, "who calls" is the controller
+// whose @RequestMapping wires to it, and the rules are the conditions that
+// actually throw BusinessRuleException.
+// ---------------------------------------------------------------------------
+const GROUPS = [
+{
+  title: "1. The transactional core",
+  note: "These four carry the money and the enrolment. They are the services with real invariants — where a half-finished operation would leave the database lying — and they are the ones worth being able to explain end to end.",
+  services: [
+  {
+    name:"RegistrationService", file:"RegistrationService.java",
+    purpose:"Turn an enquiry into a registered student — the single biggest operation in the system.",
+    who:["RegistrationController", "<span class='muted'>route</span> /registrations"],
+    calls:["StudentRepository","EnrollmentRepository","PaymentRepository","InquiryRepository","BatchRepository","CourseRepository"],
+    svcCalls:["FeeCalculator","ReceiptPdfService","EmailService"],
+    read:[
+      "searchRegisterableInquiries() — enquiries not yet converted",
+      "joinableBatchesFor(inquiry) — batches for the enquired course",
+      "joinableBatchesForCourse(courseId) — refilters when the course is changed",
+      "feeBreakdownFor / feeBreakdownForCourse — the fee preview"
+    ],
+    write:[
+      "Create <b>Student</b>",
+      "Create <b>Enrollment</b>",
+      "Create <b>Payment</b> (first installment)",
+      "Update <b>Batch</b> current count",
+      "Convert the <b>Inquiry</b> to Registered",
+      "Generate the receipt PDF",
+      "Send the receipt email"
+    ],
+    rules:[
+      "The enquiry must exist, must not be closed, and must not already be registered",
+      "The email must be unique across students",
+      "The course must exist and must still be offered",
+      "<b>The batch must belong to the selected course</b> — <i>“%s runs %s, but you selected %s.”</i>",
+      "The batch must be joinable — not Completed or Cancelled",
+      "The batch must have spare capacity — <i>“%s is full (%d/%d).”</i>",
+      "The fee is calculated by the server, never taken from the request",
+      "Installment 1 is a fixed amount; collecting less is refused",
+      "Paying more than the course fee is refused"
+    ],
+    note:"This is the one method that must be all-or-nothing. It creates a student, an enrolment and a payment, and updates a batch and an enquiry — five tables. Without <code>@Transactional</code>, a failure at the payment step leaves a student who is enrolled but has paid nothing, and no screen anywhere would show that as wrong."
+  },
+  {
+    name:"PaymentService", file:"PaymentService.java",
+    purpose:"Collect installments after registration and produce the receipt.",
+    who:["PaymentController", "StudentController", "<span class='muted'>routes</span> /payments, /students"],
+    calls:["PaymentRepository","EnrollmentRepository"],
+    svcCalls:["FeeCalculator","ReceiptPdfService"],
+    read:[
+      "findByStudent(id) — the payment history",
+      "findAll() — every payment",
+      "feeStatusFor(enrollment) — paid so far vs. balance"
+    ],
+    write:[
+      "collectNextInstallment() — creates the <b>Payment</b> row",
+      "renderReceipt() — the PDF bytes"
+    ],
+    rules:[
+      "<b>No duplicate installments</b> — <i>“All %d installments have already been collected for this enrolment.”</i>",
+      "Cannot collect more than the outstanding balance — <i>“Only %s is outstanding on this enrolment.”</i>",
+      "The receipt number is derived, not stored",
+      "The payment mode must be a known mode"
+    ],
+    note:"The installment number is worked out from how many payments already exist, not sent by the client. A client that could choose its own installment number could pay installment 2 twice and never pay installment 1."
+  },
+  {
+    name:"FeeCalculator", file:"FeeCalculator.java",
+    purpose:"Work out the installment split and the receipt number. Pure arithmetic — no database at all.",
+    who:["RegistrationService","PaymentService"],
+    calls:[],
+    svcCalls:[],
+    noDeps:true,
+    read:[
+      "breakdownFor(course, batch) — total, installment amounts, due dates",
+      "receiptNumberFor(payment) — e.g. <code>VITA/2026-27/00012-1</code>",
+      "financialYear(date) — April-to-March, not January-to-December"
+    ],
+    write:[],
+    rules:[
+      "The fee is split into 2 installments",
+      "<b>Rounding goes up on installment 1</b>, so the two never sum to less than the total",
+      "The financial year runs April–March, matching how the institute reports",
+      "The receipt number embeds the financial year and the installment"
+    ],
+    note:"It has no repository, which is exactly why it is a separate class: with no database, every rule in it can be unit-tested in milliseconds. Rounding up on the first installment rather than the last means a ₹1 rounding error is collected at the start, never left as a phantom balance at the end."
+  },
+  {
+    name:"StudentService", file:"StudentService.java",
+    purpose:"Read student records and their current enrolment. Read-only by design.",
+    who:["StudentController", "<span class='muted'>route</span> /students"],
+    calls:["StudentRepository","EnrollmentRepository"],
+    svcCalls:[],
+    read:["findAll()","findById(id)","findByBatch(batchId)"],
+    write:[],
+    writeNone:"None — students are only ever created by RegistrationService.",
+    rules:[
+      "The student must exist",
+      "<b>The latest enrolment wins</b> where a student has more than one",
+      "The batch and course shown come from the enrolment, not from the student row",
+      "Entities are converted to DTOs before leaving the service"
+    ],
+    note:"That it can only read is the point. A student without an enrolment and a payment is not a real registration, so there is deliberately no way to create one here — the only door in is RegistrationService, and that door enforces all nine rules above."
+  }
+  ]
+},
+{
+  title: "2. Enquiry and follow-up",
+  note: "The counselling pipeline: an enquiry arrives, gets a counselor, gets called back, and eventually converts or closes.",
+  services: [
+  {
+    name:"InquiryService", file:"InquiryService.java",
+    purpose:"Create enquiries, assign a counselor, schedule the first follow-up and send the confirmation.",
+    who:["InquiryController", "<span class='muted'>route</span> /inquiries"],
+    calls:["InquiryRepository","FollowupRepository","CourseRepository","ClosureReasonRepository"],
+    svcCalls:["CounselorAssignmentService","CurrentStaffService","EmailService"],
+    read:["findAll(filters)","findActive()","findById(id)"],
+    write:[
+      "create() — the <b>Inquiry</b>",
+      "Assign the counselor",
+      "Create the first <b>Followup</b>",
+      "Send the confirmation email",
+      "close() — with a closure reason",
+      "markConverted() — called by RegistrationService's flow"
+    ],
+    rules:[
+      "The course must exist",
+      "<b>The least-loaded counselor is assigned automatically</b>",
+      "A new enquiry starts at status <b>New</b>",
+      "The first follow-up is scheduled at creation, not left to be remembered",
+      "Closing requires a closing status — <i>“…is not a closing status. Use 'Lost' or 'Not Interested'.”</i>",
+      "A closed enquiry cannot be reopened by editing"
+    ],
+    note:"It calls <code>FollowupRepository</code> directly rather than FollowupService. That is deliberate: creating the first follow-up needs no rules applied — the enquiry that triggers it has just been validated — and routing through the service would create a cycle, since FollowupService already reads inquiries."
+  },
+  {
+    name:"CounselorAssignmentService", file:"CounselorAssignmentService.java",
+    purpose:"Decide which counselor takes the next enquiry. Least-loaded round robin (KB §9.6).",
+    who:["InquiryService <span class='muted'>— no controller of its own</span>"],
+    calls:["StaffRepository","InquiryRepository"],
+    svcCalls:[],
+    read:[
+      "nextCounselor() — the counselor who should take it",
+      "openLoad(staff) — how many enquiries they are still working",
+      "lastAssignedInquiryId(staff) — used only to break ties"
+    ],
+    write:[],
+    writeNone:"None — it decides, InquiryService writes.",
+    rules:[
+      "Only <b>active</b> staff with role <b>Counselor</b> are candidates",
+      "<b>Load counts only New and In-Followup</b> — closed and converted enquiries are finished work and must not count against someone",
+      "Ties are broken by whoever was assigned <b>least recently</b>, not by lowest staff id",
+      "<b>No counselors at all returns empty, not an error</b> — the enquiry stays visible and unassigned"
+    ],
+    note:"Two decisions worth defending. Counting only open enquiries means the counselor who closes their work fastest gets the next lead, rather than being punished for a long history. And breaking ties round-robin stops a quiet day funnelling every enquiry to whoever happens to have the lowest staff id."
+  },
+  {
+    name:"FollowupService", file:"FollowupService.java",
+    purpose:"Manage the follow-up calls — what is due, what happened, and what comes next.",
+    who:["FollowupController", "<span class='muted'>route</span> /followups"],
+    calls:["FollowupRepository","InquiryRepository","StaffRepository"],
+    svcCalls:["CurrentStaffService"],
+    read:[
+      "findDue() — pending follow-ups, today and overdue",
+      "findUpcoming() — scheduled ahead",
+      "findByInquiry(id) — the full call history"
+    ],
+    write:[
+      "logOutcome() — records what happened on the call",
+      "createNext() — chains the following follow-up",
+      "schedule() — books one directly"
+    ],
+    rules:[
+      "<b>The enquiry status becomes In-Followup</b> once a call is logged",
+      "The outcome must be <b>Done</b> or <b>No Response</b> — <i>“Record an outcome of 'Done' or 'No Response'.”</i>",
+      "<b>The next follow-up date cannot be in the past</b>",
+      "Remarks are stored against the call, so the history reads as a conversation",
+      "The counselor is taken from the logged-in user, never from the request"
+    ],
+    note:"The next date being refused in the past is the small rule that keeps the “due” list meaningful. One backdated follow-up and it appears permanently overdue on every counselor's dashboard, and people start ignoring the list."
+  }
+  ]
+},
+{
+  title: "3. Academic structure",
+  note: "Courses, batches and the staff who teach them. Mostly CRUD, but each one guards a relationship the database alone would only reject as an opaque constraint error.",
+  services: [
+  {
+    name:"CourseService", file:"CourseService.java",
+    purpose:"Manage courses and the faculty assigned to them.",
+    who:["CourseController", "<span class='muted'>route</span> /courses"],
+    calls:["CourseRepository","CourseCategoryRepository","CourseStaffRepository","StaffRepository"],
+    svcCalls:[],
+    read:["findAll()","findActive()","findById(id)"],
+    write:["create()","update()","delete()","<b>setPrimaryFaculty()</b>"],
+    rules:[
+      "The category must exist",
+      "Only active courses are shown publicly",
+      "<b>Setting primary faculty reuses the existing course_staff row</b> rather than inserting a second one",
+      "A course that is no longer offered cannot take new registrations"
+    ],
+    note:"<code>course_staff</code> has <code>UNIQUE(course_id, staff_id)</code>, and the person being promoted to primary is usually already on the course team — so a naive insert violates the constraint in the most common case."
+  },
+  {
+    name:"BatchService", file:"BatchService.java",
+    purpose:"Manage batches, and report how full and how placed each one is.",
+    who:["BatchController", "<span class='muted'>route</span> /batches"],
+    calls:["BatchRepository","PlacementRecordRepository","EnrollmentRepository","CourseRepository","StaffRepository"],
+    svcCalls:[],
+    read:[
+      "findAll() / findAllDetailed()",
+      "findCompletedForPlacementDisplay() — the public placement page",
+      "findById(id) / findDetailById(id)"
+    ],
+    write:["create()","update()","delete()"],
+    rules:[
+      "<b>The end date cannot be before the start date</b>",
+      "<b>Capacity cannot drop below the students already enrolled</b> — <i>“Capacity can't drop below the %d students already enrolled.”</i>",
+      "<b>A batch with enrolled students cannot be deleted</b> — <i>“Mark it Cancelled or Completed instead.”</i>",
+      "The enrolled count is <b>recomputed</b>, never trusted from the request",
+      "The placed count comes from placement_records, not a column"
+    ],
+    note:"Deletion is refused in the service, with a sentence naming the reason. Left to the database the foreign key would refuse it too — but as a constraint violation, which reaches the user as an opaque 500 that tells them nothing about what to do instead."
+  },
+  {
+    name:"CourseCategoryService", file:"CourseCategoryService.java",
+    purpose:"Manage the course categories courses are grouped under.",
+    who:["CourseCategoryController", "<span class='muted'>route</span> /course-categories"],
+    calls:["CourseCategoryRepository"],
+    svcCalls:[],
+    read:["findAll()","findActive()","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "Only <b>active</b> categories are shown publicly",
+      "The default is active = true",
+      "The category must exist before a course can reference it",
+      "DTO → Entity on the way in, Entity → DTO on the way out"
+    ]
+  },
+  {
+    name:"StaffService", file:"StaffService.java",
+    purpose:"Manage staff accounts and their roles.",
+    who:["StaffController", "<span class='muted'>route</span> /staff"],
+    calls:["StaffRepository"],
+    svcCalls:["PasswordEncoder <span class='muted'>(Spring Security)</span>"],
+    read:["findAll()","findActiveByRole(role) — feeds the counselor and faculty pickers","findById(id)"],
+    write:["create() — returns a generated temporary password","update()","delete()"],
+    rules:[
+      "The role must be a known role — <i>“Invalid role: …”</i>",
+      "<b>Passwords are BCrypt-hashed, never stored as typed</b>",
+      "A new account gets a generated temporary password",
+      "<b>A blank password on update keeps the existing hash</b> — editing a name must not silently wipe the login",
+      "The DTO never carries the password hash out"
+    ],
+    note:"The blank-password rule is the one that matters in practice. Without it, an admin correcting a typo in someone's surname would submit an empty password field and lock that person out of the system."
+  },
+  {
+    name:"CurrentStaffService", file:"CurrentStaffService.java",
+    purpose:"Resolve who is logged in, from the security context to a Staff row.",
+    who:["InquiryService","FollowupService <span class='muted'>— no controller</span>"],
+    calls:["StaffRepository"],
+    svcCalls:[],
+    read:["require() — the logged-in Staff, or throws","requireStaffId() — just the id"],
+    write:[],
+    writeNone:"None.",
+    rules:[
+      "<b>Throws rather than returning null</b> when nobody is authenticated",
+      "The identity comes from the JWT, <b>never from the request body</b>"
+    ],
+    note:"This exists so that “who logged this call” can never be supplied by the client. If the counselor id came from the request, one counselor could log a call as another."
+  },
+  {
+    name:"AuthService", file:"AuthService.java",
+    purpose:"Log staff in and issue the JWT.",
+    who:["AuthController", "<span class='muted'>route</span> /auth"],
+    calls:["StaffRepository"],
+    svcCalls:["AuthenticationManager <span class='muted'>(Spring Security)</span>","JwtService"],
+    read:["currentStaff() — who the token belongs to"],
+    write:["login() — issues the token (no row is written)"],
+    rules:[
+      "Credentials are checked by Spring Security's <b>AuthenticationManager</b>, not by hand",
+      "<b>A disabled account is refused separately from bad credentials</b>",
+      "The token carries the username, the role and the staff id",
+      "A wrong password and an unknown user give the <b>same</b> answer"
+    ],
+    note:"Giving the same answer for a wrong password and an unknown username is deliberate — different answers let anyone enumerate valid usernames one guess at a time."
+  }
+  ]
+},
+{
+  title: "4. Placements and albums",
+  note: "The placement record, the drives that produce them, and the photo albums shown on Campus Life.",
+  services: [
+  {
+    name:"PlacementRecordService", file:"PlacementRecordService.java",
+    purpose:"Record who was placed, where, and out of which batch.",
+    who:["PlacementRecordController", "<span class='muted'>route</span> /placement-records"],
+    calls:["PlacementRecordRepository","StudentRepository","RecruiterRepository","BatchRepository","EnrollmentRepository"],
+    svcCalls:[],
+    read:["findAll()","findByBatch(id) — the public batchwise page","findByRecruiter(id)","countByBatch(id) — the “X/Y placed” figure"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "<b>A student is required</b>",
+      "<b>A recruiter is required</b>",
+      "The batch is taken from the student's enrolment where not given",
+      "The count per batch drives the public placement percentage"
+    ]
+  },
+  {
+    name:"PlacementDriveService", file:"PlacementDriveService.java",
+    purpose:"Manage recruitment drives — who visited, how many openings, how many were selected.",
+    who:["PlacementDriveController", "<span class='muted'>route</span> /placement-drives"],
+    calls:["PlacementDriveRepository","RecruiterRepository","CourseRepository"],
+    svcCalls:[],
+    read:["findAll()","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "The recruiter must exist",
+      "The course must exist",
+      "<b>Selected cannot exceed openings</b> — <i>“More students selected than there were openings.”</i>",
+      "The drive mode and status must be known values"
+    ]
+  },
+  {
+    name:"BatchAlbumService", file:"BatchAlbumService.java",
+    purpose:"One photo album per batch, shown on the public Campus Life page.",
+    who:["BatchAlbumController","BatchAlbumListController", "<span class='muted'>routes</span> /batches/{id}/album, /batch-albums"],
+    calls:["BatchAlbumRepository","BatchAlbumImageRepository","BatchRepository"],
+    svcCalls:[],
+    read:["findPublishedAlbums() — the public strip","findByBatch(id) — the admin view"],
+    write:["addImage()","<b>setCover()</b>","removeImage()","updateDetails()"],
+    rules:[
+      "<b>One album per batch</b>, created lazily on first use",
+      "<b>The cover must belong to that album</b> — <i>“That photo belongs to a different batch's album.”</i>",
+      "<b>Deleting the cover promotes the next photo</b> rather than leaving the album coverless",
+      "Empty albums are hidden from the public strip"
+    ],
+    note:"Creating the album lazily means an empty album row means “somebody opened the tab”, not “there is something to see” — which is why the public strip filters them out rather than showing an empty card."
+  },
+  {
+    name:"RecruiterService", file:"RecruiterService.java",
+    purpose:"Manage the companies that recruit from the institute.",
+    who:["RecruiterController", "<span class='muted'>route</span> /recruiters"],
+    calls:["RecruiterRepository"],
+    svcCalls:[],
+    read:["findAll()","findActive()","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:["Only active recruiters are shown publicly","Referenced by both placement records and drives"]
+  }
+  ]
+},
+{
+  title: "5. Public website content",
+  note: "Six services with an identical shape: find all, find the publicly visible subset, find one, create, update, delete. The only real variation is what “publicly visible” means for each — and that difference is the reason each one exists rather than being folded into one generic content service.",
+  services: [
+  {
+    name:"BannerService", file:"BannerService.java",
+    purpose:"Homepage banners.",
+    who:["BannerController", "<span class='muted'>route</span> /banners"],
+    calls:["BannerRepository"], svcCalls:[],
+    read:["findAll()","<b>findCurrentlyValid()</b>","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "<b>Public reads are “currently valid”, not merely “active”</b> — each banner carries a start and end date",
+      "An expired banner never reaches the client, so no screen has to remember to hide one"
+    ]
+  },
+  {
+    name:"AnnouncementService", file:"AnnouncementService.java",
+    purpose:"Announcements shown on the public site.",
+    who:["AnnouncementController", "<span class='muted'>route</span> /announcements"],
+    calls:["AnnouncementRepository"], svcCalls:[],
+    read:["findAll()","<b>findCurrentlyValid()</b>","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "Same date-window rule as banners — valid, not just active",
+      "Expiry is enforced in the query, not on the screen"
+    ]
+  },
+  {
+    name:"NewsEventService", file:"NewsEventService.java",
+    purpose:"News and events.",
+    who:["NewsEventController", "<span class='muted'>route</span> /news-events"],
+    calls:["NewsEventRepository"], svcCalls:[],
+    read:["findAll()","findActive()","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:["Only active items are public","Ordered by date for the public list"]
+  },
+  {
+    name:"TestimonialService", file:"TestimonialService.java",
+    purpose:"Student testimonials.",
+    who:["TestimonialController", "<span class='muted'>route</span> /testimonials"],
+    calls:["TestimonialRepository"], svcCalls:[],
+    read:["findAll()","<b>findApproved()</b>","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "<b>Approved, not merely active</b> — a testimonial is someone else's words, so it is moderated before it appears",
+      "Unapproved testimonials are visible to staff only"
+    ]
+  },
+  {
+    name:"GalleryImageService", file:"GalleryImageService.java",
+    purpose:"The photo gallery, grouped into categories.",
+    who:["GalleryImageController", "<span class='muted'>route</span> /gallery-images"],
+    calls:["GalleryImageRepository"], svcCalls:[],
+    read:["findAll()","findActive()","<b>findCategories()</b>","findByCategory(name)","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "Only active images are public",
+      "<b>The category list is derived from the images</b>, not a separate table — an empty category cannot exist"
+    ]
+  },
+  {
+    name:"ClosureReasonService", file:"ClosureReasonService.java",
+    purpose:"The reasons an enquiry can be closed with.",
+    who:["ClosureReasonController", "<span class='muted'>route</span> /closure-reasons"],
+    calls:["ClosureReasonRepository"], svcCalls:[],
+    read:["findAll()","findActive()","findById(id)"],
+    write:["create()","update()","delete()"],
+    rules:[
+      "Only active reasons appear in the close-enquiry dropdown",
+      "A retired reason stays readable so old enquiries still explain themselves"
+    ],
+    note:"Deactivating rather than deleting is what lets a reason be retired without rewriting history on enquiries closed years ago."
+  }
+  ]
+},
+{
+  title: "6. Infrastructure services",
+  note: "These have no controller. Nothing outside the application calls them — they exist so that the services above are not each carrying their own copy of email, PDF or file-handling code.",
+  services: [
+  {
+    name:"EmailService", file:"EmailService.java",
+    purpose:"Send outbound email, with or without an attachment.",
+    who:["InquiryService","RegistrationService","ContactMessageService <span class='muted'>— no controller</span>"],
+    calls:["JavaMailSender <span class='muted'>(Spring Boot)</span>"],
+    svcCalls:[],
+    read:["isConfigured() — whether mail is set up at all","reportConfiguration() — logged at startup"],
+    write:["send()","sendWithAttachment() — the receipt PDF","<b>sendSafely()</b>"],
+    rules:[
+      "<b>A failed email must not fail the operation that triggered it</b> — sendSafely logs and swallows",
+      "If mail is not configured the application still runs; sending is skipped and logged",
+      "The from-address falls back to the configured username"
+    ],
+    note:"<code>sendSafely</code> is the whole reason this is a separate service. A registration that succeeded but whose confirmation email bounced is still a successful registration — rolling back the student, the enrolment and the payment because a mail server was briefly down would be far worse than a missing email."
+  },
+  {
+    name:"ReceiptPdfService", file:"ReceiptPdfService.java",
+    purpose:"Render the payment receipt as a PDF.",
+    who:["RegistrationService","PaymentService <span class='muted'>— no controller</span>"],
+    calls:["OpenPDF <span class='muted'>(library)</span>"],
+    svcCalls:[],
+    noDeps:true,
+    read:["render(payment) — returns the PDF bytes"],
+    write:[],
+    writeNone:"None — it writes no database row, only bytes.",
+    rules:[
+      "The layout is built in code: title block, student block, fee table",
+      "<b>The receipt shows the balance, not the plan</b> — a fully paid student shows nothing due",
+      "The receipt number comes from FeeCalculator, so it always matches"
+    ],
+    note:"<b>OpenPDF, not iText.</b> iText moved to AGPL, which would require publishing the source of anything that links it. OpenPDF is a fork of the last LGPL iText release, so it can be used in a closed project — the same API, a licence that fits."
+  },
+  {
+    name:"FileStorageService", file:"FileStorageService.java",
+    purpose:"Save uploaded images to disk and hand back a URL.",
+    who:["UploadController", "<span class='muted'>route</span> /uploads"],
+    calls:["Path root <span class='muted'>(the storage directory)</span>"],
+    svcCalls:[],
+    noDeps:true,
+    read:["isDecodableImage() — checks the bytes really are an image"],
+    write:["store(file, category) — writes the file, returns the URL","deleteByUrl(url)"],
+    rules:[
+      "<b>The filename is discarded and a UUID generated</b> — a client-supplied name can carry path separators or a double extension",
+      "<b>The extension comes from the content type</b>, never from the name",
+      "<b>The category is a fixed whitelist</b> — it becomes a directory name",
+      "There is a maximum file size",
+      "<b>The bytes are decoded to confirm it is really an image</b>, not just named like one"
+    ],
+    note:"Every rule here is about the same thing: the client chooses the contents of this file, and the filename would otherwise choose where it lands. Discarding the name entirely removes the whole class of problem rather than trying to sanitise it."
+  },
+  {
+    name:"ContactMessageService", file:"ContactMessageService.java",
+    purpose:"Receive the public Get in Touch form and notify staff.",
+    who:["ContactMessageController", "<span class='muted'>route</span> /contact-messages"],
+    calls:["ContactMessageRepository"],
+    svcCalls:["EmailService"],
+    read:["findAll() — the staff inbox","findById(id)"],
+    write:["submit() — stores the message and emails staff","markRead(id)"],
+    rules:[
+      "<b>The message is stored first, then the email is sent</b>",
+      "A failed notification email does not lose the message",
+      "Read/unread is tracked so nothing is silently missed"
+    ],
+    note:"Storing before sending is the order that matters. The database row is the record; the email is only a notification. Reverse them and a mail outage means an enquiry from a prospective student is gone with no trace."
+  }
+  ]
+}
+];
+
+// --------------------------------------------------------------- rendering
+const esc = s => s;
+
+function depList(s){
+  const items = [];
+  (s.calls||[]).forEach(c => items.push(`<li><code>${c}</code></li>`));
+  (s.svcCalls||[]).forEach(c => items.push(`<li><code class="svc-dep">${c}</code></li>`));
+  if(!items.length) items.push(`<li style="color:var(--muted);font-style:italic">Nothing — no repository, no other service</li>`);
+  return items.join("");
+}
+
+function panelList(arr, noneText, cls){
+  if(arr && arr.length) return `<ul>${arr.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  return `<p class="none">${noneText||"None."}</p>`;
+}
+
+let n = 0, html = "", index = "";
+
+GROUPS.forEach(g => {
+  html += `<h2 class="group">${g.title}</h2><p class="group-note">${g.note}</p>`;
+  g.services.forEach(s => {
+    n++;
+    index += `<a href="#svc${n}"><span class="n">${String(n).padStart(2,"0")}</span>${s.name}</a>`;
+    html += `
+    <section class="svc" id="svc${n}">
+      <h3><span class="num">${String(n).padStart(2,"0")}</span>${s.name}<span class="file">${s.file}</span></h3>
+      <div class="tree">
+        <div class="branch">
+          <h4>Purpose</h4>
+          <p class="purpose">${s.purpose}</p>
+        </div>
+        <div class="branch">
+          <h4>Who calls</h4>
+          <ul>${s.who.map(w=>`<li>${w}</li>`).join("")}</ul>
+        </div>
+        <div class="branch">
+          <h4>Calls</h4>
+          <ul>${depList(s)}</ul>
+        </div>
+      </div>
+      <div class="panels">
+        <div class="panel read">
+          <h4>Read</h4>
+          ${panelList(s.read,"None.")}
+        </div>
+        <div class="panel write">
+          <h4>Write</h4>
+          ${panelList(s.write, s.writeNone || "None.")}
+        </div>
+        <div class="panel rules">
+          <h4>Business Logic</h4>
+          ${panelList(s.rules,"None.")}
+        </div>
+      </div>
+      ${s.note ? `<p class="note"><b>Why:</b> ${s.note}</p>` : ""}
+    </section>`;
+  });
+});
+
+document.getElementById("content").innerHTML = html;
+document.getElementById("index").innerHTML = index;
+</script>
+
+<style>.muted{color:#8794a6;font-weight:400}</style>
+</body>
+</html>

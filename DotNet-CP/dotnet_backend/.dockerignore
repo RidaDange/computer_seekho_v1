@@ -1,0 +1,32 @@
+# bin/ and obj/ are the big ones. They hold artefacts compiled against the
+# host's SDK and runtime identifier, and copying them into the image means
+# `dotnet publish` may pick up a stale assembly built for a different
+# platform — a failure that looks like a code bug and is not one.
+**/bin/
+**/obj/
+
+# The test project is not built in the image; sending it only slows the
+# build context transfer.
+backend.Tests/
+
+# Runtime data, not source. uploads/ is a mounted volume in compose and
+# logs/ is written inside the container — baking a host copy of either into
+# the image would ship stale files that the volume then hides anyway.
+backend/uploads/
+backend/logs/
+
+# Local developer state.
+**/*.user
+**/.vs/
+**/.vscode/
+*.slnx
+setup-packages.*
+
+# appsettings.Development.json can hold real Google and Gmail credentials.
+# It is excluded so a secret cannot be baked into an image layer, where it
+# survives even if a later layer deletes the file.
+**/appsettings.Development.json
+
+.git
+.gitignore
+*.md

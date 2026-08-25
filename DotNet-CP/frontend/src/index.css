@@ -1,0 +1,1099 @@
+/* ============================================================
+   ComputerSeekho — SMVITA
+   ------------------------------------------------------------
+   Everything is driven by the custom properties below. Colours,
+   spacing and radii are never written literally in a rule, so a
+   brand change is an edit to :root rather than a search across
+   the file — which is exactly how the old stylesheet's twelve
+   slightly-different greys came about.
+   ============================================================ */
+
+:root {
+  /* Brand — navy and the VITA red from the institute's own site. */
+  --navy-900: #141d29;
+  --navy-800: #1a2433;
+  --navy:     #1e2a3a;
+  --navy-600: #2c3d54;
+  --navy-400: #5a6c85;
+
+  --red:      #c8102e;
+  --red-dark: #a00d25;
+  --red-soft: #fdecef;
+
+  /* Surfaces */
+  --cream:    #faf8f5;
+  --surface:  #ffffff;
+  --surface-2:#f4f6f9;
+  --border:   #e3e7ed;
+  --border-strong: #cbd3de;
+
+  /* Text */
+  --text:     #1a1f2b;
+  --text-2:   #46536b;
+  --muted:    #7a879b;
+  --on-dark:  #eef2f7;
+  --on-dark-muted: #a9b6c9;
+
+  /* Status */
+  --success:  #0f7b4f;
+  --success-soft: #e6f4ee;
+  --warning:  #b45309;
+  --warning-soft: #fef3c7;
+  --danger:   #c0261c;
+  --danger-soft: #fdeceb;
+  --info-soft: #eaf1fb;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 14px;
+
+  --shadow-xs: 0 1px 2px rgba(20, 29, 41, 0.06);
+  --shadow:    0 2px 8px rgba(20, 29, 41, 0.08);
+  --shadow-md: 0 6px 20px rgba(20, 29, 41, 0.10);
+  --shadow-lg: 0 16px 40px rgba(20, 29, 41, 0.16);
+
+  /* Rhythm — a scale rather than arbitrary values, so vertical
+     spacing lines up between components that know nothing about
+     each other. */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+
+  --maxw: 1180px;
+  --header-h: 68px;
+}
+
+/* ---------------------------------------------------------- base */
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  /* Tighter than body text: headings are short lines and the
+     body's 1.6 leaves them looking unmoored from what follows. */
+  line-height: 1.25;
+  color: var(--navy);
+  margin: 0 0 var(--s3);
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+h2 { font-size: clamp(1.35rem, 2.6vw, 1.75rem); }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 0.95rem; }
+
+p { margin: 0 0 var(--s4); }
+
+a { color: var(--red); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+img { max-width: 100%; display: block; }
+
+hr { border: 0; border-top: 1px solid var(--border); margin: var(--s6) 0; }
+
+:focus-visible {
+  /* One visible focus ring everywhere. Browsers' defaults vary and
+     several of the controls below repaint their background, which
+     hides the native ring entirely. */
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ------------------------------------------------------- buttons */
+
+button, .button {
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+button:hover, .button:hover {
+  background: var(--surface-2);
+  border-color: var(--navy-400);
+  text-decoration: none;
+}
+
+button:disabled, .button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:disabled:hover { background: var(--surface); border-color: var(--border-strong); }
+
+/* .button on its own is the primary action. Plain <button> stays
+   neutral, because most of them in the admin grids are secondary. */
+.button {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+  box-shadow: var(--shadow-xs);
+}
+.button:hover { background: var(--red-dark); border-color: var(--red-dark); color: #fff; }
+
+.button--convert { background: var(--success); border-color: var(--success); color: #fff; }
+.button--convert:hover { background: #0c6641; border-color: #0c6641; color: #fff; }
+
+.button--google { background: #fff; color: var(--text); border-color: var(--border-strong); }
+.button--google:hover { background: var(--surface-2); color: var(--text); }
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--red);
+  font-weight: 600;
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-button:hover { background: none; border: none; color: var(--red-dark); }
+
+/* --------------------------------------------------------- forms */
+
+input, select, textarea {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--navy-400);
+  box-shadow: 0 0 0 3px var(--info-soft);
+}
+
+textarea { min-height: 90px; resize: vertical; }
+
+input[type="checkbox"], input[type="radio"] { width: auto; }
+
+input:read-only, .input--locked {
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: not-allowed;
+}
+
+.form-fields { display: flex; flex-direction: column; gap: var(--s4); padding: var(--s4) 0; }
+.form-fields label,
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--s4);
+  margin-bottom: var(--s5);
+}
+.form-grid__wide { grid-column: 1 / -1; }
+
+.form-note { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+.field-error { font-size: 0.78rem; color: var(--danger); font-weight: 600; }
+.muted { color: var(--muted); }
+
+.inline-check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.search-input { max-width: 380px; margin-bottom: var(--s4); }
+
+/* -------------------------------------------------------- notices */
+
+.notice {
+  padding: var(--s3) var(--s4);
+  margin-bottom: var(--s4);
+  border-radius: var(--radius);
+  background: var(--info-soft);
+  border: 1px solid #cddffa;
+  border-left: 4px solid var(--navy-400);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.notice--important {
+  background: var(--warning-soft);
+  border-color: #fcd34d;
+  border-left-color: var(--warning);
+}
+.notice__dismiss { float: right; }
+
+.error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid #f6cfcc;
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  padding: var(--s3) var(--s4);
+  margin-bottom: var(--s4);
+  font-size: 0.9rem;
+}
+/* Inside a table cell the block treatment is far too heavy — a
+   failed row just needs red text. */
+td .error, td .field-error {
+  background: none; border: none; padding: 0; margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.badge--converted { background: var(--success-soft); color: var(--success); border-color: #b9e2ce; }
+.badge--overdue { background: var(--danger-soft); color: var(--danger); border-color: #f6cfcc; }
+
+.nav-badge {
+  display: inline-block;
+  margin-left: var(--s2);
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.page-loading {
+  padding: var(--s8) var(--s4);
+  text-align: center;
+  color: var(--muted);
+}
+
+/* -------------------------------------------------------- tables */
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 0.88rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  background: var(--surface-2);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #fbfcfe; }
+
+.cell--actions { white-space: nowrap; }
+.cell--actions button { margin-right: var(--s1); padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+.cell--notes, .cell--reason { max-width: 260px; font-size: 0.84rem; color: var(--text-2); }
+
+.row--detail > td { background: var(--surface-2); }
+.row--highlight > td { background: var(--red-soft); }
+
+.table--nested { border: none; border-radius: 0; font-size: 0.82rem; }
+.table--nested th { background: transparent; }
+
+/* Tables are the one thing that genuinely cannot reflow on a phone:
+   collapsing an eight-column grid into stacked blocks loses the
+   alignment that makes it readable. Scrolling sideways keeps it
+   intact, which is the lesser evil. */
+.table-scroll, .table-maintenance, .students-page, .inquiries-page,
+.followup-page, .batch-page, .placement-page { overflow-x: auto; }
+
+/* --------------------------------------------------- page shells */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  margin-bottom: var(--s5);
+}
+.page-header h2 { margin: 0; flex: 1; }
+.page-header__controls { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  margin: var(--s6) 0 var(--s4);
+}
+.section-heading h2, .section-heading h3 { margin: 0; }
+
+.page-narrow { max-width: 680px; margin: var(--s6) auto; padding: 0 var(--s4); }
+
+/* Two admin screens that are forms rather than grids. Constrained so a
+   16-field form doesn't stretch input boxes across a 1400px monitor,
+   which makes every one of them look like it wants a paragraph. */
+.registration-page, .add-enquiry-page { max-width: 860px; }
+.registration-page section, .add-enquiry-page form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--s5);
+  margin-bottom: var(--s4);
+  box-shadow: var(--shadow-xs);
+}
+.registration-page section table { border: none; box-shadow: none; }
+
+/* --------------------------------------------------- public shell */
+
+.public-layout { min-height: 100vh; display: flex; flex-direction: column; }
+
+.public-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  height: var(--header-h);
+  padding: 0 var(--s5);
+  background: var(--navy);
+  color: var(--on-dark);
+  box-shadow: var(--shadow);
+}
+
+.public-nav__brand {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.public-nav__brand:hover { text-decoration: none; color: #fff; }
+.public-nav__brand span { color: var(--red); }
+
+.public-nav nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-left: auto;
+}
+
+.public-nav nav a,
+.public-nav__dropdown > span {
+  color: var(--on-dark-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.public-nav nav a:hover,
+.public-nav__dropdown > span:hover {
+  color: #fff;
+  background: var(--navy-600);
+  text-decoration: none;
+}
+
+.public-nav__dropdown { position: relative; }
+.public-nav__dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 210px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: var(--s2);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+.public-nav__dropdown-menu a {
+  color: var(--text) !important;
+  padding: var(--s2) var(--s3);
+  font-weight: 500;
+}
+.public-nav__dropdown-menu a:hover { background: var(--surface-2) !important; color: var(--red) !important; }
+
+.public-nav__cta {
+  background: var(--red);
+  color: #fff !important;
+  padding: 0.45rem 0.95rem !important;
+}
+.public-nav__cta:hover { background: var(--red-dark) !important; }
+
+.public-nav__staff {
+  border: 1px solid var(--navy-400);
+  color: var(--on-dark-muted) !important;
+}
+.public-nav__staff:hover { border-color: var(--on-dark-muted); }
+
+.public-nav__toggle {
+  display: none;
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--navy-400);
+  color: var(--on-dark);
+  padding: 0.35rem 0.6rem;
+}
+.public-nav__toggle:hover { background: var(--navy-600); border-color: var(--on-dark-muted); }
+
+.public-content { flex: 1; width: 100%; max-width: var(--maxw); margin: 0 auto; padding: var(--s6) var(--s5); }
+
+/* --------------------------------------------------------- footer */
+
+.public-footer {
+  background: var(--navy-900);
+  color: var(--on-dark-muted);
+  padding: var(--s7) var(--s5) var(--s5);
+  font-size: 0.88rem;
+  margin-top: var(--s8);
+}
+.public-footer__inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: var(--s6);
+}
+.public-footer h4 {
+  color: #fff;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--s3);
+}
+.public-footer p { margin: 0 0 var(--s2); line-height: 1.6; }
+.public-footer a { color: var(--on-dark-muted); display: block; padding: 0.15rem 0; }
+.public-footer a:hover { color: #fff; }
+.public-footer__brand { font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: var(--s2); }
+.public-footer__bottom {
+  max-width: var(--maxw);
+  margin: var(--s6) auto 0;
+  padding-top: var(--s4);
+  border-top: 1px solid var(--navy-600);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--navy-400);
+}
+
+/* ----------------------------------------------------------- hero */
+
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-900) 100%);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--s8) var(--s6);
+  margin-bottom: var(--s7);
+  overflow: hidden;
+}
+/* A soft red wash bottom-right, so the block reads as branded
+   rather than as a plain navy rectangle. */
+.hero::after {
+  content: "";
+  position: absolute;
+  right: -80px;
+  bottom: -120px;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(200, 16, 46, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero > * { position: relative; z-index: 1; }
+.hero h1 { color: #fff; max-width: 18ch; }
+.hero__eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ff8fa0;
+  margin-bottom: var(--s3);
+}
+.hero__lead { font-size: 1.05rem; color: var(--on-dark); max-width: 58ch; margin-bottom: var(--s5); }
+.hero__actions { display: flex; gap: var(--s3); flex-wrap: wrap; }
+.hero__actions .button--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+.hero__actions .button--ghost:hover { background: rgba(255, 255, 255, 0.12); border-color: #fff; }
+
+.hero__stats {
+  display: flex;
+  gap: var(--s6);
+  margin-top: var(--s6);
+  padding-top: var(--s5);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  flex-wrap: wrap;
+}
+.hero__stat strong { display: block; font-size: 1.6rem; color: #fff; line-height: 1.2; }
+.hero__stat span { font-size: 0.8rem; color: var(--on-dark-muted); }
+
+/* ---------------------------------------------------------- cards */
+
+.course-grid, .faculty-grid, .recruiter-grid, .placement-grid,
+.gallery-grid, .batch-grid, .album-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--s4);
+  margin-bottom: var(--s6);
+}
+
+.course-card, .faculty-card, .recruiter-card, .placement-card,
+.batch-card, .album-card, .gallery-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  color: inherit;
+  display: block;
+}
+.course-card:hover, .faculty-card:hover, .recruiter-card:hover,
+.placement-card:hover, .batch-card:hover, .album-card:hover, .gallery-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+  text-decoration: none;
+}
+
+.course-card { padding: var(--s5); border-top: 3px solid var(--red); }
+.course-card h3 { margin-bottom: var(--s2); }
+.course-card__category {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: var(--s2);
+}
+.course-card__fees { font-weight: 700; color: var(--navy); font-size: 1.05rem; margin: 0; }
+
+.faculty-card { padding: var(--s5); text-align: center; }
+.faculty-card img {
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto var(--s3);
+  border: 3px solid var(--surface-2);
+}
+.faculty-card h3 { font-size: 1rem; margin-bottom: var(--s1); }
+
+.recruiter-card, .recruiter-logo {
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--s5); min-height: 110px; text-align: center;
+}
+.recruiter-logo img { max-height: 60px; width: auto; object-fit: contain; }
+
+.placement-card { padding: var(--s4); text-align: center; }
+.placement-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; margin-bottom: var(--s3); border-radius: var(--radius-sm); }
+
+.gallery-item { padding: 0; }
+.gallery-item img, .gallery-item__trigger img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+.gallery-item__trigger { padding: 0; border: none; background: none; width: 100%; display: block; cursor: zoom-in; }
+
+.album-card img, .album-strip img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+.album-card__body { padding: var(--s3) var(--s4); }
+.album-card__count { font-size: 0.8rem; color: var(--muted); }
+
+.batch-card { padding: var(--s4); }
+.batch-card__count { font-size: 0.8rem; color: var(--muted); }
+
+/* --------------------------------------------------- public pages */
+
+.home-page, .campus-life-page, .faculty-page, .recruiters-page,
+.batchwise-placement-page, .placement-detail-page, .recruiter-detail-page,
+.gallery-category-page, .album-page, .course-detail, .enquiry-page,
+.get-in-touch-page { width: 100%; }
+
+.course-detail__category {
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--red); margin-bottom: var(--s2);
+}
+.course-detail__meta {
+  display: flex; gap: var(--s5); flex-wrap: wrap;
+  padding: var(--s4) 0; margin-bottom: var(--s5);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.course-detail__meta strong { display: block; color: var(--navy); font-size: 1.05rem; }
+.course-detail__description { max-width: 70ch; color: var(--text-2); }
+.course-detail__cta { margin-top: var(--s5); }
+
+.get-in-touch__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s6); }
+/* Kept because other screens may still use it as a stand-in. */
+.map-placeholder {
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  min-height: 300px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+}
+
+/* The map. overflow: hidden is load-bearing — it is what makes the iframe's
+   square corners follow the wrapper's radius. */
+.map-embed {
+  margin-top: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+
+  /* A fixed height rather than an aspect ratio: this sits beside a form
+     whose height is set by its fields, and a ratio-driven map would grow
+     with the column width and pull the two sides out of alignment. */
+  height: 300px;
+  background: var(--surface-2);
+}
+.map-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;      /* the frameborder attribute is obsolete; this replaces it */
+  display: block; /* kills the inline-element descender gap under the frame */
+}
+
+.map-embed__link {
+  margin-top: var(--s2);
+  font-size: 0.85rem;
+}
+
+.enquiry-page { max-width: 640px; }
+.enquiry-page form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s5); box-shadow: var(--shadow-xs); }
+
+.album-page__meta { color: var(--muted); font-size: 0.9rem; margin-bottom: var(--s5); }
+.recruiter-detail__header { display: flex; align-items: center; gap: var(--s5); margin-bottom: var(--s5); flex-wrap: wrap; }
+.recruiter-detail__header img { max-height: 80px; width: auto; }
+
+/* --------------------------------------------------------- ticker */
+
+.ticker {
+  background: var(--navy-900);
+  color: var(--on-dark);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: var(--s2) 0;
+}
+.ticker__track { display: inline-block; padding-left: 100%; animation: ticker-scroll 30s linear infinite; }
+.ticker__item { display: inline-block; padding: 0 var(--s6); }
+.ticker__item::before { content: "•"; color: var(--red); margin-right: var(--s3); }
+@keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+/* Respect a system-level request for reduced motion — an endlessly
+   moving strip is a genuine accessibility problem for some people. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker__track { animation: none; padding-left: var(--s4); }
+}
+
+/* -------------------------------------------------------- lightbox */
+
+.lightbox {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(10, 14, 20, 0.9);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--s5);
+}
+.lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: var(--radius); }
+.lightbox__close {
+  position: absolute; top: var(--s5); right: var(--s5);
+  background: rgba(255,255,255,0.12); border-color: transparent; color: #fff;
+}
+.lightbox__close:hover { background: rgba(255,255,255,0.25); color: #fff; }
+
+/* ---------------------------------------------------- admin shell */
+
+.admin-layout { display: flex; min-height: 100vh; background: var(--surface-2); }
+
+.admin-layout__sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  background: var(--navy);
+  color: var(--on-dark);
+  padding: var(--s4) var(--s3) var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.admin-layout__brand {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  padding: var(--s2) var(--s3) var(--s4);
+  letter-spacing: -0.02em;
+}
+.admin-layout__brand:hover { color: #fff; text-decoration: none; }
+.admin-layout__brand span { color: var(--red); }
+
+.admin-layout__sidebar h4 {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--navy-400);
+  margin: var(--s4) 0 var(--s2);
+  padding: 0 var(--s3);
+}
+.admin-layout__sidebar nav { display: flex; flex-direction: column; gap: 1px; }
+.admin-layout__sidebar nav a {
+  color: var(--on-dark-muted);
+  font-size: 0.88rem;
+  padding: 0.45rem var(--s3);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+}
+.admin-layout__sidebar nav a:hover { background: var(--navy-600); color: #fff; text-decoration: none; }
+/* NavLink sets .active on the matching route — the only reliable
+   signal of where you are once the sidebar has twenty entries. */
+.admin-layout__sidebar nav a.active {
+  background: var(--navy-800);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--red);
+}
+.admin-layout__note { font-size: 0.75rem; color: var(--navy-400); padding: var(--s4) var(--s3) 0; margin-top: auto; }
+
+.admin-layout__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.admin-layout__topbar {
+  height: 58px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s4);
+  padding: 0 var(--s6);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.admin-layout__user { display: flex; align-items: center; gap: var(--s3); font-size: 0.88rem; color: var(--text-2); }
+.admin-layout__user strong { color: var(--navy); }
+.admin-layout__content { flex: 1; padding: var(--s6); max-width: 1400px; width: 100%; }
+
+.admin-denied { padding: var(--s8) var(--s5); text-align: center; color: var(--muted); }
+
+/* ---------------------------------------------------------- login */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s5);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-900) 100%);
+}
+.login-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--s7) var(--s6);
+  width: 100%;
+  max-width: 400px;
+  border-top: 4px solid var(--red);
+}
+/* The <form> *is* the card here, so the flex column is applied to
+   .login-card directly rather than to a nested form. */
+.login-card { display: flex; flex-direction: column; gap: var(--s4); }
+.login-card h1, .login-card h2 { margin: 0; }
+.login-card__subtitle { color: var(--muted); font-size: 0.9rem; margin: calc(var(--s4) * -1) 0 0; }
+.login-card label { display: flex; flex-direction: column; gap: var(--s1); font-size: 0.82rem; font-weight: 600; color: var(--text-2); }
+.login-card .error, .login-card .notice { margin: 0; }
+.login-card button[type="submit"] {
+  width: 100%; justify-content: center; padding: 0.6rem;
+  background: var(--red); border-color: var(--red); color: #fff;
+}
+.login-card button[type="submit"]:hover:not(:disabled) { background: var(--red-dark); border-color: var(--red-dark); }
+.login-card__back { text-align: center; margin: 0; font-size: 0.85rem; }
+
+/* --------------------------------------------------------- modals */
+
+/* Every modal in the app puts its heading, fields and buttons as direct
+   children of the overlay — there is no inner panel element. So the
+   overlay has to BE the panel: a column, centred, with the white surface
+   painted onto each child and the children joined edge to edge.
+   flex-direction is the load-bearing line. Without it these lay out in a
+   row and the dialog reads as a scattering of blocks across the screen. */
+.modal, .table-maintenance__modal {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(20, 29, 41, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--s6) var(--s4);
+  overflow-y: auto;
+}
+
+.modal > *, .table-maintenance__modal > * {
+  background: var(--surface);
+  width: 100%;
+  max-width: 540px;
+  /* Margins would let the dark overlay show through as stripes between
+     the blocks, so spacing is padding throughout. */
+  margin: 0;
+  padding: var(--s2) var(--s6);
+  flex-shrink: 0;
+}
+
+.modal > *:first-child, .table-maintenance__modal > *:first-child {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding-top: var(--s5);
+  padding-bottom: var(--s1);
+}
+.modal > *:last-child, .table-maintenance__modal > *:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding-bottom: var(--s5);
+  box-shadow: var(--shadow-lg);
+}
+
+.modal h3, .table-maintenance__modal h3 { margin: 0; }
+.modal p, .table-maintenance__modal p { margin: 0; }
+
+/* Labels sit directly in the overlay here rather than inside a
+   .form-fields wrapper, so they need the same column treatment. */
+.modal > label, .table-maintenance__modal > label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding-top: var(--s3);
+  padding-bottom: var(--s1);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.modal > .form-grid, .table-maintenance__modal > .form-grid { margin-bottom: 0; padding-top: var(--s3); }
+.modal > .error, .modal > .notice { border-radius: 0; margin: 0; }
+
+.modal__actions, .table-maintenance__modal-actions {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  padding-top: var(--s4);
+  margin-top: var(--s2);
+  border-top: 1px solid var(--border);
+}
+/* The first action is the one being confirmed. Styling it here rather
+   than tagging each call site keeps seven dialogs consistent. */
+.modal__actions > button:first-child,
+.table-maintenance__modal-actions > button:first-child {
+  background: var(--red); border-color: var(--red); color: #fff;
+}
+.modal__actions > button:first-child:hover:not(:disabled),
+.table-maintenance__modal-actions > button:first-child:hover:not(:disabled) {
+  background: var(--red-dark); border-color: var(--red-dark);
+}
+
+.modal__meta { font-size: 0.85rem; color: var(--muted); padding-bottom: var(--s3) !important; }
+
+/* --------------------------------------------------- admin pages */
+
+.table-maintenance__toolbar {
+  display: flex; align-items: center; gap: var(--s4);
+  margin-bottom: var(--s4); flex-wrap: wrap;
+}
+.table-maintenance__toolbar h2 { margin: 0; flex: 1; }
+
+.wizard-steps {
+  display: flex; gap: var(--s2); list-style: none;
+  padding: 0; margin: 0 0 var(--s5); flex-wrap: wrap;
+}
+.wizard-steps li {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.wizard-steps li.is-current { background: var(--navy); border-color: var(--navy); color: #fff; }
+.wizard-steps li.is-done { background: var(--success-soft); border-color: #b9e2ce; color: var(--success); }
+
+.fee-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--navy);
+  border-radius: var(--radius);
+  padding: var(--s4) var(--s5);
+  margin-bottom: var(--s5);
+}
+.fee-panel h4 { margin-bottom: var(--s3); }
+.fee-panel table { border: none; }
+/* The two derived rows sit apart from the fixed plan above them, so it's
+   clear which figures move as you type and which don't. */
+.fee-panel__live > td { border-top: 2px solid var(--border-strong); background: var(--surface-2); }
+.fee-panel .error, .fee-panel .notice { margin: var(--s3) 0 0; }
+
+.batch-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--s5);
+  margin-top: var(--s5);
+  box-shadow: var(--shadow-xs);
+}
+.batch-panel__tabs { display: flex; gap: var(--s2); margin-bottom: var(--s4); flex-wrap: wrap; }
+.batch-panel__tabs button { font-size: 0.85rem; }
+.batch-panel__tabs button.is-active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+.upcoming { margin-top: var(--s6); }
+.upcoming__toggle { margin-bottom: var(--s3); }
+
+.album-add { display: flex; gap: var(--s3); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--s5); }
+.album-add input { flex: 1; min-width: 190px; }
+.album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--s4); }
+.album-grid figure {
+  margin: 0; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+}
+.album-grid figure.is-cover { border-color: var(--success); box-shadow: 0 0 0 2px var(--success-soft); }
+.album-grid img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+.album-grid figcaption { padding: var(--s3); font-size: 0.8rem; display: flex; flex-direction: column; gap: var(--s2); }
+
+/* --------------------------------------------------- image upload */
+
+.image-upload { display: flex; flex-direction: column; gap: var(--s2); align-items: flex-start; }
+.image-upload__label { font-size: 0.82rem; font-weight: 600; color: var(--text-2); }
+.image-upload__empty { margin: 0; font-size: 0.82rem; color: var(--muted); }
+.image-upload__preview { display: flex; align-items: center; gap: var(--s3); }
+.image-upload__preview img {
+  width: 92px; height: 92px; object-fit: cover;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
+}
+
+/* ----------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+  .public-nav { gap: var(--s3); padding: 0 var(--s4); }
+  .public-nav__toggle { display: inline-flex; }
+
+  /* Off-canvas rather than a squeezed row: eight items and a
+     dropdown cannot survive being compressed into a phone's width. */
+  .public-nav nav {
+    position: absolute;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: var(--s3);
+    background: var(--navy-800);
+    border-top: 1px solid var(--navy-600);
+    box-shadow: var(--shadow-md);
+    display: none;
+  }
+  .public-nav nav.is-open { display: flex; }
+  .public-nav nav a, .public-nav__dropdown > span { padding: var(--s3); }
+  .public-nav__dropdown-menu { position: static; box-shadow: none; margin: var(--s1) 0 var(--s2) var(--s4); }
+  .public-nav__cta, .public-nav__staff { text-align: center; justify-content: center; margin-top: var(--s2); }
+
+  .public-content { padding: var(--s5) var(--s4); }
+  .public-footer__inner { grid-template-columns: 1fr 1fr; }
+  .get-in-touch__grid { grid-template-columns: 1fr; }
+  .hero { padding: var(--s6) var(--s5); }
+
+  /* The sidebar becomes a horizontal strip. Hiding it entirely would
+     leave no way to navigate; scrolling it sideways keeps every link
+     reachable without a hamburger and its state to manage. */
+  .admin-layout { flex-direction: column; }
+  .admin-layout__sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    padding: var(--s2) var(--s3);
+    gap: var(--s4);
+  }
+  .admin-layout__brand { padding: 0 var(--s3) 0 0; white-space: nowrap; }
+  .admin-layout__sidebar h4 { display: none; }
+  .admin-layout__sidebar nav { flex-direction: row; gap: var(--s1); }
+  .admin-layout__sidebar nav a { white-space: nowrap; }
+  .admin-layout__sidebar nav a.active { box-shadow: inset 0 -3px 0 var(--red); }
+  .admin-layout__note { display: none; }
+  .admin-layout__topbar { padding: 0 var(--s4); }
+  .admin-layout__content { padding: var(--s4); }
+}
+
+@media (max-width: 560px) {
+  body { font-size: 14px; }
+  .public-footer__inner { grid-template-columns: 1fr; gap: var(--s5); }
+  .hero { padding: var(--s5) var(--s4); }
+  .hero__stats { gap: var(--s4); }
+  .hero__actions { flex-direction: column; align-items: stretch; }
+  .hero__actions .button { justify-content: center; }
+  .course-grid, .faculty-grid, .recruiter-grid, .placement-grid,
+  .gallery-grid, .batch-grid, .album-strip { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .modal > *, .table-maintenance__modal > * { padding-left: var(--s4); padding-right: var(--s4); }
+  .page-header { gap: var(--s3); }
+}
+
+/* ------------------------------------------------------------ print
+   The receipt and the enrolment form are PDFs generated server-side,
+   but staff still print list views occasionally. Chrome and the
+   sidebar are noise on paper. */
+@media print {
+  .public-nav, .public-footer, .admin-layout__sidebar,
+  .admin-layout__topbar, .ticker, .page-header__controls { display: none !important; }
+  body { background: #fff; }
+  .admin-layout__content, .public-content { padding: 0; }
+  table { border: 1px solid #999; }
+}

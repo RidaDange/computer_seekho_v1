@@ -1,0 +1,23 @@
+# Everything here would be copied into the build context and shipped to the
+# daemon on every build. target/ alone is usually larger than the finished
+# image, and a stale local build must never end up inside a container —
+# the whole point of the multi-stage build is that the jar is produced
+# reproducibly by the build stage.
+target/
+bin/
+.settings/
+.classpath
+.project
+.factorypath
+
+# Uploaded photos are runtime data on a volume, not part of the image.
+uploads/
+
+.git
+.gitignore
+*.md
+
+# Never bake credentials into an image. These are supplied as environment
+# variables by compose at run time.
+.env
+*.env

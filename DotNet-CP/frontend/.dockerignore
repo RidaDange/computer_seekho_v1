@@ -1,0 +1,14 @@
+# node_modules is the big one — hundreds of megabytes shipped to the daemon
+# on every build, only to be discarded and reinstalled by `npm ci`. Copying
+# a host-built tree would also break any native module compiled for Windows.
+node_modules/
+dist/
+
+.git
+.gitignore
+*.md
+
+# Vite reads .env at build time; leaving it out keeps local values from
+# being baked into an image by accident.
+.env
+.env.*

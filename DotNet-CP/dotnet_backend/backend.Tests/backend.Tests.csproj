@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+
+    <!--
+      Pinned to 9.x to match the API project.
+
+      The API runs EF Core 9 because Pomelo has no EF Core 10 release yet.
+      This package arrived at 10.0.10, which would load a second set of EF
+      Core assemblies into the test host and produce the same
+      MissingMethodException the API hit before.
+
+      Nothing here currently uses an in-memory context — the service tests
+      mock IGenericRepository instead — but leaving a mismatched version in
+      place is a trap for whoever adds the first DbContext test.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.7.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\backend\backend.csproj" />
+  </ItemGroup>
+
+</Project>

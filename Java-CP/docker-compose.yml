@@ -1,0 +1,91 @@
+# ComputerSeekho — full stack.
+#
+#   docker compose up --build
+#
+# Ports are chosen to match local development exactly, so the Google OAuth
+# client already registered for localhost:8080 / localhost:5173 keeps working
+# without a second set of redirect URIs. The one exception is MySQL, which is
+# published on 3307 because a locally installed MySQL is almost certainly
+# already holding 3306.
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: cs-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-computerseekho}
+      MYSQL_DATABASE: computerseekho
+    ports:
+      - "3307:3306"
+    volumes:
+      # Named volume, not a bind mount: MySQL's data directory needs
+      # permissions and file semantics a Windows host directory can't
+      # provide, and it corrupts in ways that look like random crashes.
+      - mysql-data:/var/lib/mysql
+      # The SQL is mounted read-only and loaded by the script below, which
+      # controls the order. See docker/mysql/init.sh.
+      - ./db:/sql:ro
+      - ./docker/mysql/init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
+    healthcheck:
+      # mysqladmin ping, not a port check: the container accepts TCP well
+      # before the server is ready, and the backend would connect, fail and
+      # exit during that window.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-computerseekho}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: cs-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        # service_healthy, not the default service_started. ddl-auto=validate
+        # means the backend reads the schema on startup, so starting it
+        # against a database that is still initialising is a guaranteed crash.
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:mysql://mysql:3306/computerseekho?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-computerseekho}
+
+      # Secrets, all optional. Copy .env.example to .env and fill in the
+      # ones you want; anything left blank simply disables that feature.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-at-least-32-chars-long}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      # Uploaded photos outlive the container. Without this they sit in the
+      # writable layer and disappear on the next `docker compose up --build`.
+      - uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked in at build time — Vite has no runtime configuration. This is
+        # the address the *browser* uses, so it is the published host port,
+        # not the compose service name.
+        VITE_API_BASE_URL: http://localhost:8080/api
+    container_name: cs-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # 5173 externally to match the dev server, so the OAuth redirect URI
+      # http://localhost:5173/oauth/callback is unchanged. nginx serves on
+      # 80 inside the container.
+      - "5173:80"
+
+volumes:
+  mysql-data:
+  uploads:

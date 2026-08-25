@@ -1,0 +1,32 @@
+# Secrets. .env holds the database password, JWT signing key, Google client
+# secret and Gmail app password. .env.example is the committed template.
+.env
+*.env
+!.env.example
+
+# Build output
+backend/target/
+backend/bin/
+frontend/dist/
+frontend/node_modules/
+
+# Runtime data — uploaded photos live on a Docker volume or in this
+# directory in local development; neither belongs in version control.
+backend/uploads/
+uploads/
+
+# IDE
+.settings/
+.classpath
+.project
+.factorypath
+.idea/
+*.iml
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log

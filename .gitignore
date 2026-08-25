@@ -11,7 +11,7 @@ Backend-Java/.apt_generated/
 Backend-Java/.springBeans
 Backend-Java/.sts4-cache/
 
-# Maven Wrapper (if you don't want to track it)
+# Maven Wrapper
 # Backend-Java/.mvn/
 
 #################################################
@@ -22,10 +22,17 @@ Backend-Java/.idea/
 Backend-Java/*.iml
 
 #################################################
+# .NET
+#################################################
+
+**/bin/
+**/obj/
+.vs/
+
+#################################################
 # Logs
 #################################################
 
-Backend-Java/*.log
 *.log
 
 #################################################
@@ -69,21 +76,10 @@ Backend-Java/src/main/resources/uploads/
 .DS_Store
 Thumbs.db
 
-<<<<<<< HEAD
-############################
-# Uploads
-############################
-
-Backend-Java/src/main/resources/uploads/
-
-############################
-# Generated files
-############################
-src.
-=======
 #################################################
-# Compiled Files
+# Eclipse / IDE generated files
 #################################################
 
->>>>>>> c4a75f795e0f3e13a24aedc8798ff4123e5e081f
 *.class
+.metadata/
+.project

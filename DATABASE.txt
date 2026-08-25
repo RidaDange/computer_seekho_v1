@@ -1,0 +1,591 @@
+================================================================================================
+ComputerSeekho  —  Database Reference
+USM's Shriram Mantri Vidyanidhi Info Tech Academy
+================================================================================================
+
+Generated from db/schema.sql, which is the source of truth for this project.
+Engine: MySQL 8 / InnoDB, utf8mb4.
+
+Hibernate runs with spring.jpa.hibernate.ddl-auto=validate, so the JPA entities
+must match this schema exactly — the application refuses to start if they drift.
+
+22 tables, 186 columns.
+
+------------------------------------------------------------------------------------------------
+CONTENTS
+------------------------------------------------------------------------------------------------
+  1. course_categories       5 cols   Master
+  2. staff                  11 cols   Master
+  3. courses                10 cols   Master
+  4. course_staff            5 cols   Junction
+  5. batches                13 cols   Master
+  6. recruiters              4 cols   Master
+  7. closure_reasons         3 cols   Master
+  8. inquiries              11 cols   Transaction
+  9. students               18 cols   Transaction
+ 10. followups               7 cols   Transaction
+ 11. enrollments             6 cols   Transaction
+ 12. payments               12 cols   Transaction
+ 13. placement_drives       15 cols   Transaction
+ 14. placement_records       9 cols   Transaction
+ 15. batch_albums            7 cols   Content
+ 16. batch_album_images      8 cols   Content
+ 17. gallery_images          7 cols   Content
+ 18. testimonials            7 cols   Content
+ 19. news_events             7 cols   Content
+ 20. banners                 8 cols   Content
+ 21. announcements           7 cols   Content
+ 22. contact_messages        6 cols   Transaction
+
+================================================================================================
+1. COURSE_CATEGORIES
+================================================================================================
+[Master]
+Groups courses (Diploma, Certification, and so on).
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+category_id             INT                           NO    -                 AUTO_INC
+name                    VARCHAR(100)                  NO    -                 UNIQUE
+age_group               VARCHAR(50)                   YES   -                 
+description             TEXT                          YES   -                 
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (category_id)
+
+================================================================================================
+2. STAFF
+================================================================================================
+[Master]
+Employees and their login. role drives every authorisation rule in SecurityConfig.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+staff_id                INT                           NO    -                 AUTO_INC
+name                    VARCHAR(150)                  NO    -                 
+email                   VARCHAR(150)                  NO    -                 UNIQUE
+phone                   VARCHAR(15)                   YES   -                 
+role                    ENUM('Admin','Counselor','Faculty','Manager','Receptionist')NO    'Counselor'       
+qualification           VARCHAR(200)                  YES   -                 
+experience              DECIMAL(4,1)                  YES   -                 
+                        -- Years of experience
+photo_url               VARCHAR(500)                  YES   -                 
+username                VARCHAR(50)                   NO    -                 UNIQUE
+password_hash           VARCHAR(255)                  NO    -                 
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (staff_id)
+
+================================================================================================
+3. COURSES
+================================================================================================
+[Master]
+What the academy sells. fees drives the whole payment chain.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+course_id               INT                           NO    -                 AUTO_INC
+category_id             INT                           NO    -                 
+name                    VARCHAR(150)                  NO    -                 
+description             TEXT                          YES   -                 
+duration                VARCHAR(50)                   YES   -                 
+fees                    DECIMAL(10,2)                 NO    0.00              
+level                   ENUM('Beginner','Intermediate','Advanced')NO    'Beginner'        
+syllabus_url            VARCHAR(500)                  YES   -                 
+cover_photo             VARCHAR(255)                  YES   -                 
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (course_id)
+  FOREIGN KEY   (category_id) -> course_categories(category_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+4. COURSE_STAFF
+================================================================================================
+[Junction]
+Which staff teach which course. is_primary marks the lead faculty.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+course_staff_id         INT                           NO    -                 AUTO_INC
+course_id               INT                           NO    -                 
+staff_id                INT                           NO    -                 
+assigned_date           DATE                          YES   (CURRENT_DATE)    
+is_primary              TINYINT(1)                    NO    0                 
+
+  PRIMARY KEY   (course_staff_id)
+  UNIQUE        (course_id, staff_id)   [uk_course_staff]
+  FOREIGN KEY   (course_id) -> courses(course_id)
+                ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY   (staff_id) -> staff(staff_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+5. BATCHES
+================================================================================================
+[Master]
+A cohort of one course. current_count is recomputed, never hand-edited.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+batch_id                INT                           NO    -                 AUTO_INC
+course_id               INT                           NO    -                 
+staff_id                INT                           NO    -                 
+batch_name              VARCHAR(100)                  NO    -                 
+academic_year           VARCHAR(20)                   YES   -                 
+                        -- e.g. "2024-25"
+start_date              DATE                          YES   -                 
+end_date                DATE                          YES   -                 
+presentation_date       DATETIME                      YES   -                 
+timing                  VARCHAR(100)                  YES   -                 
+capacity                INT                           NO    20                
+current_count           INT                           NO    0                 
+                        -- System-calculated from enrollments; never hand-edited via Table
+                        Maintenance
+status                  ENUM('Upcoming','Ongoing','Completed','Cancelled')NO    'Upcoming'        
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (batch_id)
+  FOREIGN KEY   (course_id) -> courses(course_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (staff_id) -> staff(staff_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+6. RECRUITERS
+================================================================================================
+[Master]
+Companies that hire from the academy.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+recruiter_id            INT                           NO    -                 AUTO_INC
+company_name            VARCHAR(150)                  NO    -                 UNIQUE
+logo_url                VARCHAR(500)                  YES   -                 
+is_active               TINYINT(1)                    NO    1                 
+                        -- Controls visibility on the public Our Recruiters page only;
+                        historical placements remain intact regardless
+
+  PRIMARY KEY   (recruiter_id)
+
+================================================================================================
+7. CLOSURE_REASONS
+================================================================================================
+[Master]
+The fixed list of reasons an enquiry may be closed with.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+reason_id               INT                           NO    -                 AUTO_INC
+reason_text             VARCHAR(200)                  NO    -                 UNIQUE
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (reason_id)
+
+================================================================================================
+8. INQUIRIES
+================================================================================================
+[Transaction]
+A lead. Everything downstream traces back to a row here.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+inquiry_id              INT                           NO    -                 AUTO_INC
+course_id               INT                           NO    -                 
+staff_id                INT                           YES   -                 
+enquirer_name           VARCHAR(150)                  NO    -                 
+email                   VARCHAR(150)                  YES   -                 
+phone                   VARCHAR(15)                   YES   -                 
+message                 TEXT                          YES   -                 
+source                  VARCHAR(100)                  YES   -                 
+status                  ENUM('New','In-Followup','Converted','Lost','Not Interested')NO    'New'             
+inquiry_date            DATE                          NO    (CURRENT_DATE)    
+closure_reason_id       INT                           YES   -                 
+                        -- App-mandatory when status = Lost or Not Interested; not required
+                        for Converted
+
+  PRIMARY KEY   (inquiry_id)
+  FOREIGN KEY   (course_id) -> courses(course_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (staff_id) -> staff(staff_id)
+                ON DELETE SET NULL ON UPDATE CASCADE
+  FOREIGN KEY   (closure_reason_id) -> closure_reasons(reason_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+9. STUDENTS
+================================================================================================
+[Transaction]
+A registered student. inquiry_id NOT NULL enforces "no enquiry, no registration".
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+student_id              INT                           NO    -                 AUTO_INC
+inquiry_id              INT                           NO    -                 
+first_name              VARCHAR(150)                  NO    -                 
+last_name               VARCHAR(150)                  NO    -                 
+parent_name             VARCHAR(150)                  NO    -                 
+parent_phone            VARCHAR(15)                   YES   -                 
+email                   VARCHAR(150)                  YES   -                 UNIQUE
+phone                   VARCHAR(15)                   YES   -                 
+dob                     DATE                          YES   -                 
+gender                  ENUM('Male','Female','Other') YES   -                 
+address_line1           VARCHAR(255)                  YES   -                 
+address_line2           VARCHAR(255)                  YES   -                 
+city                    VARCHAR(100)                  YES   -                 
+state                   VARCHAR(100)                  YES   -                 
+pincode                 VARCHAR(10)                   YES   -                 
+photo_url               VARCHAR(500)                  YES   -                 
+qualification           VARCHAR(150)                  YES   -                 
+reg_date                DATE                          NO    (CURRENT_DATE)    
+
+  PRIMARY KEY   (student_id)
+  FOREIGN KEY   (inquiry_id) -> inquiries(inquiry_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+10. FOLLOWUPS
+================================================================================================
+[Transaction]
+One scheduled or logged call against an enquiry.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+followup_id             INT                           NO    -                 AUTO_INC
+inquiry_id              INT                           NO    -                 
+staff_id                INT                           NO    -                 
+followup_date           DATE                          NO    (CURRENT_DATE)    
+notes                   TEXT                          YES   -                 
+next_followup           DATE                          YES   -                 
+status                  ENUM('Pending','Done','No Response')NO    'Pending'         
+
+  PRIMARY KEY   (followup_id)
+  FOREIGN KEY   (inquiry_id) -> inquiries(inquiry_id)
+                ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY   (staff_id) -> staff(staff_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+11. ENROLLMENTS
+================================================================================================
+[Transaction]
+Places a student in a batch.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+enrollment_id           INT                           NO    -                 AUTO_INC
+student_id              INT                           NO    -                 
+batch_id                INT                           NO    -                 
+inquiry_id              INT                           NO    -                 
+enroll_date             DATE                          NO    (CURRENT_DATE)    
+status                  ENUM('Active','Completed','Dropped')NO    'Active'          
+
+  PRIMARY KEY   (enrollment_id)
+  FOREIGN KEY   (student_id) -> students(student_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (batch_id) -> batches(batch_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (inquiry_id) -> inquiries(inquiry_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+12. PAYMENTS
+================================================================================================
+[Transaction]
+One fee installment. receipt_no is derived from (student, installment), not sequential.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+payment_id              INT                           NO    -                 AUTO_INC
+student_id              INT                           NO    -                 
+enrollment_id           INT                           NO    -                 
+amount                  DECIMAL(10,2)                 NO    -                 
+installment_number      INT                           NO    1                 
+total_installments      INT                           NO    2                 
+                        -- Business rule: fixed at 2 installments
+payment_date            DATE                          NO    (CURRENT_DATE)    
+payment_mode            ENUM('Cash','UPI','Card','Bank Transfer','Cheque')NO    'Cash'            
+payment_status          ENUM('Success','Pending','Failed','Refunded')NO    'Success'         
+transaction_id          VARCHAR(100)                  YES   -                 
+receipt_no              VARCHAR(100)                  NO    -                 UNIQUE
+remarks                 TEXT                          YES   -                 
+
+  PRIMARY KEY   (payment_id)
+  FOREIGN KEY   (student_id) -> students(student_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (enrollment_id) -> enrollments(enrollment_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+
+================================================================================================
+13. PLACEMENT_DRIVES
+================================================================================================
+[Transaction]
+A recruiter visiting for a batch.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+drive_id                INT                           NO    -                 AUTO_INC
+recruiter_id            INT                           NO    -                 
+course_id               INT                           YES   -                 
+drive_date              DATE                          NO    -                 
+drive_mode              ENUM('Online','Offline','Hybrid')NO    -                 
+position                VARCHAR(100)                  NO    -                 
+description             TEXT                          YES   -                 
+eligibility_criteria    TEXT                          YES   -                 
+package                 DECIMAL(10,2)                 YES   -                 
+                        -- Annual CTC in INR
+hr_contact_name         VARCHAR(150)                  YES   -                 
+hr_contact_email        VARCHAR(150)                  YES   -                 
+hr_contact_phone        VARCHAR(15)                   YES   -                 
+no_of_openings          INT                           YES   -                 
+no_of_students_selected INT                           YES   -                 
+drive_status            ENUM('Scheduled','Completed','Cancelled')NO    'Scheduled'       
+
+  PRIMARY KEY   (drive_id)
+  FOREIGN KEY   (recruiter_id) -> recruiters(recruiter_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (course_id) -> courses(course_id)
+                ON DELETE SET NULL ON UPDATE CASCADE
+
+================================================================================================
+14. PLACEMENT_RECORDS
+================================================================================================
+[Transaction]
+One student placed at one recruiter.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+placement_id            INT                           NO    -                 AUTO_INC
+student_id              INT                           NO    -                 
+batch_id                INT                           YES   -                 
+recruiter_id            INT                           NO    -                 
+position                VARCHAR(200)                  YES   -                 
+drive_id                INT                           YES   -                 
+package                 DECIMAL(10,2)                 YES   -                 
+                        -- Annual CTC in INR
+placement_date          DATE                          YES   -                 
+is_featured             TINYINT(1)                    NO    0                 
+
+  PRIMARY KEY   (placement_id)
+  FOREIGN KEY   (student_id) -> students(student_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (batch_id) -> batches(batch_id)
+                ON DELETE SET NULL ON UPDATE CASCADE
+  FOREIGN KEY   (recruiter_id) -> recruiters(recruiter_id)
+                ON DELETE RESTRICT ON UPDATE CASCADE
+  FOREIGN KEY   (drive_id) -> placement_drives(drive_id)
+                ON DELETE SET NULL ON UPDATE CASCADE
+
+================================================================================================
+15. BATCH_ALBUMS
+================================================================================================
+[Content]
+One photo album per batch, enforced by UNIQUE(batch_id).
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+album_id                INT                           NO    -                 AUTO_INC
+batch_id                INT                           NO    -                 
+title                   VARCHAR(200)                  NO    'Batch Photos'    
+description             TEXT                          YES   -                 
+cover_image_id          INT                           YES   -                 
+created_at              DATETIME                      NO    CURRENT_TIMESTAMP 
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (album_id)
+  UNIQUE        (batch_id)   [uk_batch_album]
+  FOREIGN KEY   (batch_id) -> batches(batch_id)
+                ON DELETE CASCADE ON UPDATE CASCADE
+
+================================================================================================
+16. BATCH_ALBUM_IMAGES
+================================================================================================
+[Content]
+Photos inside a batch album.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+image_id                INT                           NO    -                 AUTO_INC
+album_id                INT                           NO    -                 
+image_url               VARCHAR(500)                  NO    -                 
+caption                 VARCHAR(255)                  YES   -                 
+uploaded_by             INT                           YES   -                 
+upload_date             DATE                          NO    (CURRENT_DATE)    
+display_order           INT                           NO    0                 
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (image_id)
+  FOREIGN KEY   (album_id) -> batch_albums(album_id)
+                ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY   (uploaded_by) -> staff(staff_id)
+                ON DELETE SET NULL ON UPDATE CASCADE
+
+================================================================================================
+17. GALLERY_IMAGES
+================================================================================================
+[Content]
+Campus Life gallery, curated through Table Maintenance.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+image_id                INT                           NO    -                 AUTO_INC
+title                   VARCHAR(200)                  NO    -                 
+description             TEXT                          YES   -                 
+image_url               VARCHAR(500)                  NO    -                 
+category                VARCHAR(100)                  YES   -                 
+upload_date             DATE                          NO    (CURRENT_DATE)    
+is_active               TINYINT(1)                    NO    1                 
+
+  PRIMARY KEY   (image_id)
+
+================================================================================================
+18. TESTIMONIALS
+================================================================================================
+[Content]
+Student quotes shown on the public site.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+testimonial_id          INT                           NO    -                 AUTO_INC
+name                    VARCHAR(150)                  NO    -                 
+content                 TEXT                          NO    -                 
+rating                  TINYINT                       YES   -                 
+photo_url               VARCHAR(500)                  YES   -                 
+is_approved             TINYINT(1)                    NO    0                 
+created_at              DATETIME                      NO    CURRENT_TIMESTAMP 
+
+  PRIMARY KEY   (testimonial_id)
+
+================================================================================================
+19. NEWS_EVENTS
+================================================================================================
+[Content]
+News and event items.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+news_id                 INT                           NO    -                 AUTO_INC
+title                   VARCHAR(200)                  NO    -                 
+content                 TEXT                          YES   -                 
+image_url               VARCHAR(500)                  YES   -                 
+event_date              DATE                          YES   -                 
+is_active               TINYINT(1)                    NO    1                 
+created_at              DATETIME                      NO    CURRENT_TIMESTAMP 
+
+  PRIMARY KEY   (news_id)
+
+================================================================================================
+20. BANNERS
+================================================================================================
+[Content]
+Home page banner carousel.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+banner_id               INT                           NO    -                 AUTO_INC
+title                   VARCHAR(200)                  YES   -                 
+image_url               VARCHAR(500)                  NO    -                 
+link_url                VARCHAR(500)                  YES   -                 
+display_order           INT                           NO    0                 
+is_active               TINYINT(1)                    NO    1                 
+start_date              DATE                          YES   -                 
+end_date                DATE                          YES   -                 
+
+  PRIMARY KEY   (banner_id)
+
+================================================================================================
+21. ANNOUNCEMENTS
+================================================================================================
+[Content]
+Scrolling ticker items, shown only while valid.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+announcement_id         INT                           NO    -                 AUTO_INC
+content                 VARCHAR(500)                  NO    -                 
+start_date              DATE                          YES   -                 
+end_date                DATE                          YES   -                 
+display_order           INT                           NO    0                 
+is_active               TINYINT(1)                    NO    1                 
+created_at              DATETIME                      NO    CURRENT_TIMESTAMP 
+
+  PRIMARY KEY   (announcement_id)
+
+================================================================================================
+22. CONTACT_MESSAGES
+================================================================================================
+[Transaction]
+Messages from the public Get in Touch form.
+
+Column                  Type                          Null  Default           Extra
+------------------------------------------------------------------------------------------------
+message_id              INT                           NO    -                 AUTO_INC
+name                    VARCHAR(150)                  NO    -                 
+email                   VARCHAR(150)                  NO    -                 
+message                 VARCHAR(500)                  NO    -                 
+is_read                 TINYINT(1)                    NO    0                 
+created_at              DATETIME                      NO    CURRENT_TIMESTAMP 
+
+  PRIMARY KEY   (message_id)
+
+================================================================================================
+FOREIGN KEY MAP
+================================================================================================
+
+  courses.category_id                          ->  course_categories.category_id
+  course_staff.course_id                       ->  courses.course_id
+  course_staff.staff_id                        ->  staff.staff_id
+  batches.course_id                            ->  courses.course_id
+  batches.staff_id                             ->  staff.staff_id
+  inquiries.course_id                          ->  courses.course_id
+  inquiries.staff_id                           ->  staff.staff_id
+  inquiries.closure_reason_id                  ->  closure_reasons.reason_id
+  students.inquiry_id                          ->  inquiries.inquiry_id
+  followups.inquiry_id                         ->  inquiries.inquiry_id
+  followups.staff_id                           ->  staff.staff_id
+  enrollments.student_id                       ->  students.student_id
+  enrollments.batch_id                         ->  batches.batch_id
+  enrollments.inquiry_id                       ->  inquiries.inquiry_id
+  payments.student_id                          ->  students.student_id
+  payments.enrollment_id                       ->  enrollments.enrollment_id
+  placement_drives.recruiter_id                ->  recruiters.recruiter_id
+  placement_drives.course_id                   ->  courses.course_id
+  placement_records.student_id                 ->  students.student_id
+  placement_records.batch_id                   ->  batches.batch_id
+  placement_records.recruiter_id               ->  recruiters.recruiter_id
+  placement_records.drive_id                   ->  placement_drives.drive_id
+  batch_albums.batch_id                        ->  batches.batch_id
+  batch_album_images.album_id                  ->  batch_albums.album_id
+  batch_album_images.uploaded_by               ->  staff.staff_id
+
+================================================================================================
+NOTES
+================================================================================================
+
+MASTER vs TRANSACTION  (BRD section 6.4)
+  Master tables are maintained through the admin panel Table Maintenance
+  screens. Transaction tables never are — they are written only by the flows
+  that own them: enquiry capture, registration, follow-up logging, payment
+  collection.
+
+RULES THE SCHEMA ITSELF ENFORCES
+  students.inquiry_id      NOT NULL   no enquiry, no registration
+  enrollments.inquiry_id   NOT NULL   the enrolment carries the same trace
+  batch_albums             UNIQUE(batch_id)        one album per batch
+  course_staff             UNIQUE(course_id, staff_id)
+                                      a person teaches a course once, so
+                                      promoting an existing teacher to primary
+                                      must UPDATE the row, not INSERT another
+
+RULES THE SCHEMA DELIBERATELY DOES NOT ENFORCE
+  "at most one is_primary per course" — MySQL cannot express this as a plain
+  constraint, so CourseService owns it at the service layer.
+
+  batches.current_count is a cached figure. It is recomputed from enrollments
+  on every registration and batch edit, never accepted from a form — a counter
+  that drifts once stays wrong.
+
+  inquiries.closure_reason_id is nullable in the schema but mandatory in the
+  application whenever status becomes Lost or Not Interested, so a closed
+  enquiry always carries a reason from the fixed list.
+

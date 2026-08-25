@@ -1,0 +1,186 @@
+# ComputerSeekho — full stack.
+#
+#   docker compose up --build
+#
+# Four services:
+#   mysql     3307  the one database both backends share
+#   backend   8080  Java, Spring Boot
+#   dotnet    5192  .NET, ASP.NET Core
+#   frontend  5173  React, built and served by nginx
+#
+# Both backends run at once, against the same schema and the same uploads
+# volume. A record created through one is visible in the other immediately —
+# which is the point worth demonstrating.
+#
+# The frontend talks to whichever backend its VITE_API_BASE_URL build arg was
+# baked with; see the note on that argument below.
+#
+# Ports are chosen to match local development exactly, so the Google OAuth
+# client already registered for localhost:8080 / localhost:5192 / localhost:5173
+# keeps working without a third set of redirect URIs. The one exception is
+# MySQL, which is published on 3307 because a locally installed MySQL is
+# almost certainly already holding 3306.
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: cs-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-computerseekho}
+      MYSQL_DATABASE: computerseekho
+    ports:
+      - "3307:3306"
+    volumes:
+      # Named volume, not a bind mount: MySQL's data directory needs
+      # permissions and file semantics a Windows host directory can't
+      # provide, and it corrupts in ways that look like random crashes.
+      - mysql-data:/var/lib/mysql
+      # The SQL is mounted read-only and loaded by the script below, which
+      # controls the order. See docker/mysql/init.sh.
+      - ./db:/sql:ro
+      - ./docker/mysql/init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
+    healthcheck:
+      # mysqladmin ping, not a port check: the container accepts TCP well
+      # before the server is ready, and the backend would connect, fail and
+      # exit during that window.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-computerseekho}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: cs-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        # service_healthy, not the default service_started. ddl-auto=validate
+        # means the backend reads the schema on startup, so starting it
+        # against a database that is still initialising is a guaranteed crash.
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:mysql://mysql:3306/computerseekho?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-computerseekho}
+
+      # Secrets, all optional. Copy .env.example to .env and fill in the
+      # ones you want; anything left blank simply disables that feature.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-at-least-32-chars-long}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      # Uploaded photos outlive the container. Without this they sit in the
+      # writable layer and disappear on the next `docker compose up --build`.
+      - uploads:/app/uploads
+
+  dotnet:
+    build:
+      context: ./dotnet_backend
+    container_name: cs-dotnet
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        # Same reasoning as the Java backend: EF Core is configured
+        # database-first and never creates a table, so starting against a
+        # database that is still initialising fails on the first query.
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # .NET maps __ (double underscore) to configuration nesting, so
+      # ConnectionStrings__Default overrides the "ConnectionStrings.Default"
+      # key in appsettings.json. A colon works on Linux too but not on
+      # Windows, and __ works everywhere.
+      #
+      # Kept on one line on purpose. A YAML folded scalar (>-) turns each
+      # newline into a space, which would leave "user=root; password=..."
+      # with a space the connection-string parser has to tolerate. Long and
+      # correct beats wrapped and fragile.
+      ConnectionStrings__Default: "server=mysql;port=3306;database=computerseekho;user=root;password=${DB_PASSWORD:-computerseekho};AllowPublicKeyRetrieval=true;SslMode=None"
+
+      # The SAME secret the Java backend uses. This is not tidiness — the
+      # .NET backend signs a token and forwards it to Java to render receipt
+      # PDFs, and Java verifies it with this key. Two different values and
+      # every receipt returns 403.
+      Jwt__Key: ${JWT_SECRET:-dev-only-secret-change-me-at-least-32-chars-long}
+
+      # Container-to-container, so the compose service name resolves. Unlike
+      # VITE_API_BASE_URL below, this call is made by the .NET process
+      # inside the network, never by the visitor's browser.
+      JavaService__BaseUrl: http://backend:8080
+
+      # The React app's origin, for CORS. Index 0 because Cors:AllowedOrigins
+      # is an array, and .NET addresses array elements by position.
+      Cors__AllowedOrigins__0: http://localhost:5173
+
+      Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      OAuth2__RedirectUri: http://localhost:5173/oauth/callback
+
+      Mail__Username: ${MAIL_USERNAME:-}
+      Mail__Password: ${MAIL_PASSWORD:-}
+
+      Uploads__Directory: /app/uploads
+    ports:
+      # 5192 externally to match local development, so the redirect URI
+      # already registered with Google — http://localhost:5192/api/signin-google
+      # — keeps working with no second entry. 8080 inside, which is what
+      # Kestrel binds to in the container images.
+      - "5192:8080"
+    volumes:
+      # The SAME volume the Java backend mounts, deliberately.
+      #
+      # Both backends share one database, and an uploaded photo is stored as
+      # a URL in that database. Give them separate volumes and a photo
+      # uploaded through .NET is a broken image when the page is served with
+      # Java behind it — the row exists, the file does not.
+      - uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked in at build time — Vite has no runtime configuration. This is
+        # the address the *browser* uses, so it is the published host port,
+        # not the compose service name.
+        #
+        # THIS is the switch between the two backends:
+        #   http://localhost:8080/api  -> Java   (Spring Boot)
+        #   http://localhost:5192/api  -> .NET   (ASP.NET Core)
+        #
+        # Both are running either way; this only decides which one the React
+        # app talks to. Changing it needs a rebuild, not a restart —
+        # `docker compose up --build frontend` — because a static bundle has
+        # no runtime config to re-read.
+        #
+        # Log in again after switching. Java issues tokens with no `iss` or
+        # `aud` claim and .NET validates both, so a token minted by Java is
+        # rejected by .NET and every call 401s until you re-authenticate.
+        VITE_API_BASE_URL: http://localhost:8080/api
+    container_name: cs-frontend
+    restart: unless-stopped
+    depends_on:
+      # Listed so compose starts them first, but note this is the default
+      # service_started condition, not service_healthy. The frontend is
+      # static files — nginx serves them whether or not an API is up, and
+      # gating on a backend would leave the site down during a restart
+      # instead of showing an error on the pages that need data.
+      - backend
+      - dotnet
+    ports:
+      # 5173 externally to match the dev server, so the OAuth redirect URI
+      # http://localhost:5173/oauth/callback is unchanged. nginx serves on
+      # 80 inside the container.
+      - "5173:80"
+
+volumes:
+  mysql-data:
+  uploads:
